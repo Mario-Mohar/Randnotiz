@@ -20,8 +20,8 @@ public class MainViewModel : ViewModelBase
     private TextAnnotation? _selectedAnnotation;
     private double _zoomLevel = 1.0;
 
-    private const double BaseDpi = 150.0;
-    private static readonly double[] ZoomLevels = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+    private const double BaseDpi = 96.0;
+    private static readonly double[] ZoomLevels = [1.0, 1.25, 1.5, 2.0, 3.0];
 
     private double CurrentDpi => BaseDpi * _zoomLevel;
 
