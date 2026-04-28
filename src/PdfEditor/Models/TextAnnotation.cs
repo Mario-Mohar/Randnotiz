@@ -11,6 +11,7 @@ public class TextAnnotation : INotifyPropertyChanged
     private double _fontSize = 12.0;
     private string _fontFamily = "Arial";
     private bool _isEditing;
+    private bool _isSelected;
 
     public TextAnnotation(double x, double y, int pageIndex)
     {
@@ -55,6 +56,12 @@ public class TextAnnotation : INotifyPropertyChanged
     {
         get => _isEditing;
         set { _isEditing = value; OnPropertyChanged(); }
+    }
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set { _isSelected = value; OnPropertyChanged(); }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

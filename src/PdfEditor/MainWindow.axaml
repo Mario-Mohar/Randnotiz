@@ -5,7 +5,8 @@
         x:Class="Randnotiz.MainWindow"
         Title="Randnotiz"
         Icon="avares://Randnotiz/Assets/icon.png" Height="800" Width="1100"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        DragDrop.AllowDrop="True">
     <Window.DataContext>
         <vm:MainViewModel/>
     </Window.DataContext>
@@ -29,6 +30,11 @@
             <ComboBox ItemsSource="{Binding FontFamilies}"
                       SelectedItem="{Binding SelectedFontFamily}"
                       Width="150"/>
+            <Border Width="1" Background="#CCCCCC" Margin="4,2"/>
+            <Button Content="−" Command="{Binding ZoomOutCommand}" Padding="8,4" FontSize="14"/>
+            <TextBlock Text="{Binding ZoomText}" VerticalAlignment="Center"
+                       Margin="4,0" MinWidth="42" TextAlignment="Center"/>
+            <Button Content="+" Command="{Binding ZoomInCommand}" Padding="8,4" FontSize="14"/>
         </StackPanel>
 
         <!-- Status bar -->

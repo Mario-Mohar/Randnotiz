@@ -18,6 +18,16 @@ public class MainViewModel : ViewModelBase
     private double _selectedFontSize = 12.0;
     private string _selectedFontFamily = "Arial";
     private TextAnnotation? _selectedAnnotation;
+    private double _zoomLevel = 1.0;
+
+    private const double BaseDpi = 150.0;
+    private static readonly double[] ZoomLevels = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+
+    private double CurrentDpi => BaseDpi * _zoomLevel;
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Properties
+    // ──────────────────────────────────────────────────────────────────────────
 
     public ObservableCollection<PdfPageModel> Pages { get; } = new();
 
@@ -42,8 +52,32 @@ public class MainViewModel : ViewModelBase
     public TextAnnotation? SelectedAnnotation
     {
         get => _selectedAnnotation;
-        set => SetProperty(ref _selectedAnnotation, value);
+        set
+        {
+            if (_selectedAnnotation == value) return;
+            if (_selectedAnnotation is not null) _selectedAnnotation.IsSelected = false;
+            _selectedAnnotation = value;
+            if (_selectedAnnotation is not null) _selectedAnnotation.IsSelected = true;
+            OnPropertyChanged();
+            DeleteAnnotationCommand.RaiseCanExecuteChanged();
+        }
     }
+
+    public double ZoomLevel
+    {
+        get => _zoomLevel;
+        private set
+        {
+            double oldDpi = CurrentDpi;
+            if (!SetProperty(ref _zoomLevel, value)) return;
+            OnPropertyChanged(nameof(ZoomText));
+            ZoomInCommand.RaiseCanExecuteChanged();
+            ZoomOutCommand.RaiseCanExecuteChanged();
+            _ = RerenderAllPagesAsync(oldDpi, CurrentDpi);
+        }
+    }
+
+    public string ZoomText => $"{(int)(_zoomLevel * 100)}%";
 
     public double[] FontSizes { get; } =
         [8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 72];
@@ -51,10 +85,16 @@ public class MainViewModel : ViewModelBase
     public string[] FontFamilies { get; } =
         ["Arial", "Times New Roman", "Courier New", "Calibri", "Verdana", "Tahoma"];
 
+    // ──────────────────────────────────────────────────────────────────────────
+    // Commands
+    // ──────────────────────────────────────────────────────────────────────────
+
     public ICommand OpenCommand { get; }
     public ICommand SaveCommand { get; }
     public ICommand SaveAsCommand { get; }
-    public ICommand DeleteAnnotationCommand { get; }
+    public RelayCommand DeleteAnnotationCommand { get; }
+    public RelayCommand ZoomInCommand { get; }
+    public RelayCommand ZoomOutCommand { get; }
 
     public MainViewModel()
     {
@@ -65,9 +105,20 @@ public class MainViewModel : ViewModelBase
         SaveAsCommand = new RelayCommand(
             async () => await SavePdfAsync(true),
             () => CurrentFilePath is not null);
-        DeleteAnnotationCommand = new RelayCommand(DeleteSelectedAnnotation,
-            () => SelectedAnnotation is not null);
+        DeleteAnnotationCommand = new RelayCommand(
+            DeleteSelectedAnnotation,
+            () => SelectedAnnotation is not null && !SelectedAnnotation.IsEditing);
+        ZoomInCommand = new RelayCommand(
+            () => ZoomLevel = ZoomLevels.First(z => z > _zoomLevel),
+            () => _zoomLevel < ZoomLevels.Last());
+        ZoomOutCommand = new RelayCommand(
+            () => ZoomLevel = ZoomLevels.Last(z => z < _zoomLevel),
+            () => _zoomLevel > ZoomLevels.First());
     }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // File operations
+    // ──────────────────────────────────────────────────────────────────────────
 
     private static Window? GetMainWindow()
     {
@@ -92,33 +143,41 @@ public class MainViewModel : ViewModelBase
         });
 
         if (files.Count == 0) return;
-
         var filePath = files[0].TryGetLocalPath();
         if (filePath is null) return;
+
+        await LoadFileAsync(filePath);
+    }
+
+    // Called by drag-drop in MainWindow
+    public async Task LoadFileAsync(string filePath)
+    {
+        var window = GetMainWindow();
 
         try
         {
             _renderService.Close();
             Pages.Clear();
+            SelectedAnnotation = null;
 
             await _renderService.LoadAsync(filePath);
             CurrentFilePath = filePath;
 
             for (int i = 0; i < _renderService.PageCount; i++)
             {
-                var image = await _renderService.RenderPageAsync(i);
-                var pageModel = new PdfPageModel(i)
+                var image = await _renderService.RenderPageAsync(i, CurrentDpi);
+                Pages.Add(new PdfPageModel(i)
                 {
                     WidthInPoints = image.PixelSize.Width,
                     HeightInPoints = image.PixelSize.Height,
                     RenderedImage = image
-                };
-                Pages.Add(pageModel);
+                });
             }
         }
         catch (Exception ex)
         {
-            await ShowErrorAsync(window, $"Fehler beim Öffnen der PDF:\n{ex.Message}");
+            if (window is not null)
+                await ShowErrorAsync(window, $"Fehler beim Öffnen der PDF:\n{ex.Message}");
         }
     }
 
@@ -143,7 +202,6 @@ public class MainViewModel : ViewModelBase
                 SuggestedFileName = System.IO.Path.GetFileName(CurrentFilePath)
             });
             if (file is null) return;
-
             var path = file.TryGetLocalPath();
             if (path is null) return;
             outputPath = path;
@@ -155,9 +213,7 @@ public class MainViewModel : ViewModelBase
             _saveService.Save(CurrentFilePath, tempPath, Pages.ToList());
 
             if (outputPath == CurrentFilePath)
-            {
                 _renderService.Close();
-            }
 
             if (System.IO.File.Exists(outputPath))
                 System.IO.File.Delete(outputPath);
@@ -168,7 +224,10 @@ public class MainViewModel : ViewModelBase
                 await _renderService.LoadAsync(outputPath);
                 for (int i = 0; i < Pages.Count; i++)
                 {
-                    Pages[i].RenderedImage = await _renderService.RenderPageAsync(i);
+                    var image = await _renderService.RenderPageAsync(i, CurrentDpi);
+                    Pages[i].RenderedImage = image;
+                    Pages[i].WidthInPoints = image.PixelSize.Width;
+                    Pages[i].HeightInPoints = image.PixelSize.Height;
                 }
             }
 
@@ -179,6 +238,10 @@ public class MainViewModel : ViewModelBase
             await ShowErrorAsync(window, $"Fehler beim Speichern:\n{ex.Message}");
         }
     }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Annotations
+    // ──────────────────────────────────────────────────────────────────────────
 
     public void AddAnnotation(int pageIndex, double x, double y)
     {
@@ -202,6 +265,36 @@ public class MainViewModel : ViewModelBase
         page?.Annotations.Remove(SelectedAnnotation);
         SelectedAnnotation = null;
     }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Zoom
+    // ──────────────────────────────────────────────────────────────────────────
+
+    private async Task RerenderAllPagesAsync(double oldDpi, double newDpi)
+    {
+        if (Pages.Count == 0) return;
+
+        double scale = newDpi / oldDpi;
+
+        for (int i = 0; i < Pages.Count; i++)
+        {
+            // Scale annotation positions so they stay at the same relative spot on the page
+            foreach (var ann in Pages[i].Annotations)
+            {
+                ann.X *= scale;
+                ann.Y *= scale;
+            }
+
+            var image = await _renderService.RenderPageAsync(i, newDpi);
+            Pages[i].RenderedImage = image;
+            Pages[i].WidthInPoints = image.PixelSize.Width;
+            Pages[i].HeightInPoints = image.PixelSize.Height;
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Dialogs
+    // ──────────────────────────────────────────────────────────────────────────
 
     private static async Task ShowErrorAsync(Window window, string message)
     {

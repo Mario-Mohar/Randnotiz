@@ -1,67 +1,21 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:models="clr-namespace:Randnotiz.Models"
              x:Class="Randnotiz.Views.PageView">
     <Grid Margin="0,10">
         <!-- Page container -->
         <Border BorderBrush="#CCCCCC" BorderThickness="1" Background="White"
-                HorizontalAlignment="Center"
-                DragDrop.AllowDrop="True">
-            <Grid PointerPressed="Canvas_PointerPressed">
+                HorizontalAlignment="Center">
+            <Grid>
                 <!-- Rendered PDF page image -->
                 <Image Source="{Binding RenderedImage}" Stretch="None"
                        RenderOptions.BitmapInterpolationMode="HighQuality"/>
 
-                <!-- Canvas overlay for text annotations -->
-                <Canvas x:Name="AnnotationCanvas"
-                        Background="Transparent">
-                    <ItemsControl ItemsSource="{Binding Annotations}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <Canvas/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemContainerTheme>
-                            <ControlTheme TargetType="ContentPresenter">
-                                <Setter Property="Canvas.Left" Value="{Binding X}"/>
-                                <Setter Property="Canvas.Top" Value="{Binding Y}"/>
-                            </ControlTheme>
-                        </ItemsControl.ItemContainerTheme>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="models:TextAnnotation">
-                                <Grid PointerPressed="Annotation_PointerPressed"
-                                      PointerMoved="Annotation_PointerMoved"
-                                      PointerReleased="Annotation_PointerReleased">
-                                    <!-- Display mode: show text -->
-                                    <TextBlock Text="{Binding Text}"
-                                               FontSize="{Binding FontSize}"
-                                               FontFamily="{Binding FontFamily}"
-                                               Foreground="Black"
-                                               Cursor="SizeAll"
-                                               DoubleTapped="TextBlock_DoubleTapped"
-                                               IsVisible="{Binding !IsEditing}"/>
-                                    <!-- Edit mode: text input -->
-                                    <TextBox Text="{Binding Text}"
-                                             FontSize="{Binding FontSize}"
-                                             FontFamily="{Binding FontFamily}"
-                                             BorderThickness="1"
-                                             BorderBrush="#4A90D9"
-                                             Background="White"
-                                             Foreground="Black"
-                                             CaretBrush="Black"
-                                             MinWidth="50"
-                                             Padding="2"
-                                             LostFocus="TextBox_LostFocus"
-                                             KeyDown="TextBox_KeyDown"
-                                             AttachedToVisualTree="TextBox_AttachedToVisualTree"
-                                             IsVisible="{Binding IsEditing}"/>
-                                </Grid>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </Canvas>
+                <!-- Canvas overlay: annotation controls are added here imperatively -->
+                <Canvas x:Name="AnnotationCanvas" Background="Transparent"
+                        PointerPressed="AnnotationCanvas_PointerPressed"/>
             </Grid>
         </Border>
+
         <!-- Page number -->
         <TextBlock HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,-20"
                    Foreground="Gray" FontSize="11">
