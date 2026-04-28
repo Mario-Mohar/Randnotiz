@@ -29,9 +29,6 @@ public partial class PageView : UserControl
         var point = e.GetCurrentPoint(sender as Visual);
         if (!point.Properties.IsLeftButtonPressed) return;
 
-        // Only handle clicks on the canvas itself, not on child elements
-        if (e.Source != sender && e.Source is not Canvas) return;
-
         if (DataContext is PdfPageModel page)
         {
             var pos = e.GetPosition(AnnotationCanvas);
