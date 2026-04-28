@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Randnotiz.Models;
 using Randnotiz.ViewModels;
@@ -98,8 +99,14 @@ public partial class PageView : UserControl
     {
         if (sender is TextBox tb)
         {
-            tb.Focus();
-            tb.SelectAll();
+            // Defer focus until after layout so BringIntoView uses the correct position.
+            // Without this, Canvas.Left/Top haven't been applied yet and the ScrollViewer
+            // scrolls to (0,0) instead of the actual annotation position.
+            Dispatcher.UIThread.Post(() =>
+            {
+                tb.Focus();
+                tb.SelectAll();
+            }, DispatcherPriority.Loaded);
         }
     }
 }
