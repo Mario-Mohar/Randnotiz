@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 
-namespace PdfEditor;
+namespace Randnotiz;
 
 public partial class MainWindow : Window
 {

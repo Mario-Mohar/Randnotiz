@@ -1,7 +1,7 @@
 using System.Globalization;
 using Avalonia.Data.Converters;
 
-namespace PdfEditor.Converters;
+namespace Randnotiz.Converters;
 
 public class BoolToIsVisibleConverter : IValueConverter
 {

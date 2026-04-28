@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace PdfEditor.ViewModels;
+namespace Randnotiz.ViewModels;
 
 public abstract class ViewModelBase : INotifyPropertyChanged
 {

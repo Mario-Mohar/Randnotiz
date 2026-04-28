@@ -2,7 +2,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using PdfSharp.Fonts;
 
-namespace PdfEditor.Services;
+namespace Randnotiz.Services;
 
 public class CrossPlatformFontResolver : IFontResolver
 {

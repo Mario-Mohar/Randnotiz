@@ -4,7 +4,25 @@
       "Bash(dotnet:*)",
       "Bash(winget:*)",
       "Bash(export:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(pacman -Qs:*)",
+      "Bash(yay:*)",
+      "Bash(pacman -Ss:*)",
+      "Bash(git -C /home/themo/Dokumente/PDF-Editor remote:*)",
+      "Skill(commit-commands:commit-push-pr)",
+      "Bash(git checkout:*)",
+      "Bash(git pull:*)",
+      "Bash(git branch:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run view:*)",
+      "Bash(git tag:*)",
+      "Bash(git -C /home/themo/Dokumente/PDF-Editor add src/PdfEditor/Services/PdfRenderService.cs)",
+      "Bash(git -C:*)",
+      "Bash(git -C /home/themo/Dokumente/PDF-Editor push)",
+      "Bash(xargs sed:*)"
     ]
   }
 }

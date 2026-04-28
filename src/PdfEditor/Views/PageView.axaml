@@ -1,7 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:models="clr-namespace:PdfEditor.Models"
-             x:Class="PdfEditor.Views.PageView">
+             xmlns:models="clr-namespace:Randnotiz.Models"
+             x:Class="Randnotiz.Views.PageView">
     <Grid Margin="0,10">
         <!-- Page container -->
         <Border BorderBrush="#CCCCCC" BorderThickness="1" Background="White"

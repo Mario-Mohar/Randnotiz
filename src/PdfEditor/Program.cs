@@ -1,6 +1,6 @@
 using Avalonia;
 
-namespace PdfEditor;
+namespace Randnotiz;
 
 class Program
 {

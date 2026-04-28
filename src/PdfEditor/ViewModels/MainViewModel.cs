@@ -4,10 +4,10 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
-using PdfEditor.Models;
-using PdfEditor.Services;
+using Randnotiz.Models;
+using Randnotiz.Services;
 
-namespace PdfEditor.ViewModels;
+namespace Randnotiz.ViewModels;
 
 public class MainViewModel : ViewModelBase
 {

@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace PdfEditor.Models;
+namespace Randnotiz.Models;
 
 public class TextAnnotation : INotifyPropertyChanged
 {

@@ -1,8 +1,8 @@
-using PdfEditor.Models;
+using Randnotiz.Models;
 using PdfSharp.Drawing;
 using PdfSharp.Pdf.IO;
 
-namespace PdfEditor.Services;
+namespace Randnotiz.Services;
 
 public class PdfSaveService
 {

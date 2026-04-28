@@ -1,12 +1,12 @@
 using System.IO;
-using PdfEditor.Models;
-using PdfEditor.Services;
+using Randnotiz.Models;
+using Randnotiz.Services;
 using PdfSharp.Drawing;
 using PdfSharp.Fonts;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
 
-namespace PdfEditor.Tests.Services;
+namespace Randnotiz.Tests.Services;
 
 public class PdfSaveServiceTests
 {

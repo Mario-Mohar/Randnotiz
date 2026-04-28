@@ -3,10 +3,10 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.VisualTree;
-using PdfEditor.Models;
-using PdfEditor.ViewModels;
+using Randnotiz.Models;
+using Randnotiz.ViewModels;
 
-namespace PdfEditor.Views;
+namespace Randnotiz.Views;
 
 public partial class PageView : UserControl
 {

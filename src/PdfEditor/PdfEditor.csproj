@@ -5,6 +5,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>Randnotiz</AssemblyName>
+    <RootNamespace>Randnotiz</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

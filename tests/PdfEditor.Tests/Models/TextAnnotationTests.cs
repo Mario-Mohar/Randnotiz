@@ -1,6 +1,6 @@
-using PdfEditor.Models;
+using Randnotiz.Models;
 
-namespace PdfEditor.Tests.Models;
+namespace Randnotiz.Tests.Models;
 
 public class TextAnnotationTests
 {

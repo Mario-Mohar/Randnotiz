@@ -4,7 +4,7 @@ using Docnet.Core;
 using Docnet.Core.Models;
 using SkiaSharp;
 
-namespace PdfEditor.Services;
+namespace Randnotiz.Services;
 
 public class PdfRenderService
 {

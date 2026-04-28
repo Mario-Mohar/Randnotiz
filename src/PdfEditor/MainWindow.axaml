@@ -1,9 +1,9 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="clr-namespace:PdfEditor.ViewModels"
-        xmlns:views="clr-namespace:PdfEditor.Views"
-        x:Class="PdfEditor.MainWindow"
-        Title="PDF-Editor" Height="800" Width="1100"
+        xmlns:vm="clr-namespace:Randnotiz.ViewModels"
+        xmlns:views="clr-namespace:Randnotiz.Views"
+        x:Class="Randnotiz.MainWindow"
+        Title="Randnotiz" Height="800" Width="1100"
         WindowStartupLocation="CenterScreen">
     <Window.DataContext>
         <vm:MainViewModel/>

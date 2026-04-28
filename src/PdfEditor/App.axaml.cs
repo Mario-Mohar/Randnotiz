@@ -1,10 +1,10 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using PdfEditor.Services;
+using Randnotiz.Services;
 using PdfSharp.Fonts;
 
-namespace PdfEditor;
+namespace Randnotiz;
 
 public partial class App : Application
 {

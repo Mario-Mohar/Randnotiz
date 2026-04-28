@@ -1,6 +1,6 @@
 using System.Windows.Input;
 
-namespace PdfEditor.ViewModels;
+namespace Randnotiz.ViewModels;
 
 public class RelayCommand : ICommand
 {
