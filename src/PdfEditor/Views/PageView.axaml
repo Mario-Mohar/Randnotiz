@@ -21,12 +21,12 @@
                                 <Canvas/>
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
-                        <ItemsControl.Styles>
-                            <Style Selector="ItemsControl > ContentPresenter">
+                        <ItemsControl.ItemContainerTheme>
+                            <ControlTheme TargetType="ContentPresenter">
                                 <Setter Property="Canvas.Left" Value="{Binding X}"/>
                                 <Setter Property="Canvas.Top" Value="{Binding Y}"/>
-                            </Style>
-                        </ItemsControl.Styles>
+                            </ControlTheme>
+                        </ItemsControl.ItemContainerTheme>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="models:TextAnnotation">
                                 <Grid PointerPressed="Annotation_PointerPressed"
