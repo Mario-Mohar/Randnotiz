@@ -7,15 +7,14 @@
         <Border BorderBrush="#CCCCCC" BorderThickness="1" Background="White"
                 HorizontalAlignment="Center"
                 DragDrop.AllowDrop="True">
-            <Grid>
+            <Grid PointerPressed="Canvas_PointerPressed">
                 <!-- Rendered PDF page image -->
                 <Image Source="{Binding RenderedImage}" Stretch="None"
                        RenderOptions.BitmapInterpolationMode="HighQuality"/>
 
                 <!-- Canvas overlay for text annotations -->
                 <Canvas x:Name="AnnotationCanvas"
-                        Background="Transparent"
-                        PointerPressed="Canvas_PointerPressed">
+                        Background="Transparent">
                     <ItemsControl ItemsSource="{Binding Annotations}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
