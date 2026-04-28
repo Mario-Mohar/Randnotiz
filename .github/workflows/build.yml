@@ -3,6 +3,7 @@ name: Build
 on:
   push:
     branches: [ master ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ master ]
 
@@ -37,8 +38,23 @@ jobs:
       - name: Publish
         run: dotnet publish src/PdfEditor/PdfEditor.csproj -c Release -r ${{ matrix.rid }} --self-contained true -o out/${{ matrix.artifact }}
 
+      - name: Zip artifact (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: zip -r ${{ matrix.artifact }}.zip out/${{ matrix.artifact }}/
+
+      - name: Zip artifact (Windows)
+        if: matrix.os == 'windows-latest'
+        run: Compress-Archive -Path out/${{ matrix.artifact }}/* -DestinationPath ${{ matrix.artifact }}.zip
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: out/${{ matrix.artifact }}/
+          path: ${{ matrix.artifact }}.zip
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') }}
+          files: ${{ matrix.artifact }}.zip
