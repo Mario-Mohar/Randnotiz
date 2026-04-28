@@ -34,7 +34,12 @@ public class MainViewModel : ViewModelBase
     public string? CurrentFilePath
     {
         get => _currentFilePath;
-        private set => SetProperty(ref _currentFilePath, value);
+        private set
+        {
+            if (!SetProperty(ref _currentFilePath, value)) return;
+            SaveCommand.RaiseCanExecuteChanged();
+            SaveAsCommand.RaiseCanExecuteChanged();
+        }
     }
 
     public double SelectedFontSize
@@ -90,8 +95,8 @@ public class MainViewModel : ViewModelBase
     // ──────────────────────────────────────────────────────────────────────────
 
     public ICommand OpenCommand { get; }
-    public ICommand SaveCommand { get; }
-    public ICommand SaveAsCommand { get; }
+    public RelayCommand SaveCommand { get; }
+    public RelayCommand SaveAsCommand { get; }
     public RelayCommand DeleteAnnotationCommand { get; }
     public RelayCommand ZoomInCommand { get; }
     public RelayCommand ZoomOutCommand { get; }
