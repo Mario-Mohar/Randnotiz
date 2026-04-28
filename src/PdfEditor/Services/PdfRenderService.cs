@@ -38,21 +38,12 @@ public class PdfRenderService
     {
         if (_filePath is null) throw new InvalidOperationException("No PDF loaded.");
 
-        // Get page dimensions at native size to calculate scaling
-        int scaledWidth, scaledHeight;
-        using (var lib = DocLib.Instance)
-        using (var sizeReader = lib.GetDocReader(_filePath, new PageDimensions(1, 1)))
-        using (var sizePage = sizeReader.GetPageReader(pageIndex))
-        {
-            double nativeWidth = sizePage.GetPageWidth();
-            double nativeHeight = sizePage.GetPageHeight();
-            scaledWidth = (int)(nativeWidth * dpi / 72.0);
-            scaledHeight = (int)(nativeHeight * dpi / 72.0);
-        }
+        // PageDimensions is a max bounding box — the page scales to fit while preserving aspect ratio.
+        // US Legal (14 inches) is the largest common page size, so dpi*14 covers standard pages.
+        int maxDim = (int)(dpi * 14);
 
-        // Render at target resolution
         using var library = DocLib.Instance;
-        using var reader = library.GetDocReader(_filePath, new PageDimensions(scaledWidth, scaledHeight));
+        using var reader = library.GetDocReader(_filePath, new PageDimensions(maxDim, maxDim));
         using var page = reader.GetPageReader(pageIndex);
 
         int width = page.GetPageWidth();
