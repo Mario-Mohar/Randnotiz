@@ -17,10 +17,10 @@ jobs:
         include:
           - os: ubuntu-latest
             rid: linux-x64
-            artifact: PdfEditor-linux-x64
+            artifact: Randnotiz-linux-x64
           - os: windows-latest
             rid: win-x64
-            artifact: PdfEditor-win-x64
+            artifact: Randnotiz-win-x64
 
     runs-on: ${{ matrix.os }}
 
@@ -39,15 +39,25 @@ jobs:
         run: dotnet test --no-restore
 
       - name: Publish
-        run: dotnet publish src/PdfEditor/PdfEditor.csproj -c Release -r ${{ matrix.rid }} --self-contained true -o out/${{ matrix.artifact }}
+        run: >
+          dotnet publish src/PdfEditor/PdfEditor.csproj
+          -c Release
+          -r ${{ matrix.rid }}
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -o out/${{ matrix.artifact }}
 
-      - name: Zip artifact (Linux)
+      - name: Set executable bit and zip (Linux)
         if: matrix.os == 'ubuntu-latest'
-        run: zip -r ${{ matrix.artifact }}.zip out/${{ matrix.artifact }}/
+        run: |
+          chmod +x out/${{ matrix.artifact }}/Randnotiz
+          cd out/${{ matrix.artifact }}
+          zip -r ../../${{ matrix.artifact }}.zip Randnotiz
 
       - name: Zip artifact (Windows)
         if: matrix.os == 'windows-latest'
-        run: Compress-Archive -Path out/${{ matrix.artifact }}/* -DestinationPath ${{ matrix.artifact }}.zip
+        run: Compress-Archive -Path out/${{ matrix.artifact }}/Randnotiz.exe -DestinationPath ${{ matrix.artifact }}.zip
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
