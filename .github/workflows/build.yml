@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write  # required by SignPath
 
 jobs:
   build:
@@ -61,3 +62,36 @@ jobs:
         with:
           prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') }}
           files: ${{ matrix.artifact }}.zip
+
+  sign-windows:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: PdfEditor-win-x64
+          path: .
+
+      - name: Sign with SignPath
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: pdf-editor
+          signing-policy-slug: release-signing
+          artifact-configuration-slug: windows-exe
+          github-artifact-id: PdfEditor-win-x64
+          wait-for-completion: true
+          output-artifact-directory: signed/
+
+      - name: Re-zip signed artifact
+        run: zip -r PdfEditor-win-x64-signed.zip signed/
+
+      - name: Upload signed artifact to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') }}
+          files: PdfEditor-win-x64-signed.zip
