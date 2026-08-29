@@ -4,3 +4,8 @@ obj/
 *.user
 *.suo
 *.DotSettings.user
+
+# Build-Ausgabe: gehört in die Releases, nicht ins Repo
+publish/
+publish-windows/
+publish-linux/
