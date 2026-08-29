@@ -17,7 +17,10 @@ public class PdfRenderService
     public Task LoadAsync(string filePath)
     {
         _filePath = filePath;
-        using var library = DocLib.Instance;
+        // Kein using: DocLib.Instance ist ein prozessweites Singleton. Wer es
+        // hier freigibt, nimmt es auch jedem spaeteren Aufruf weg. Der reader
+        // darunter gehoert dagegen sehr wohl pro Dokument freigegeben.
+        var library = DocLib.Instance;
         using var reader = library.GetDocReader(filePath, new PageDimensions(1, 1));
         _pageCount = reader.GetPageCount();
         return Task.CompletedTask;
@@ -34,7 +37,8 @@ public class PdfRenderService
             // US Legal (14 inches) is the largest common page size, so dpi*14 covers standard pages.
             int maxDim = (int)(dpi * 14);
 
-            using var library = DocLib.Instance;
+            // Siehe LoadAsync: das Singleton wird nicht pro Seite freigegeben.
+            var library = DocLib.Instance;
             using var reader = library.GetDocReader(filePath, new PageDimensions(maxDim, maxDim));
             using var page = reader.GetPageReader(pageIndex);
 
