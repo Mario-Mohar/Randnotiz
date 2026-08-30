@@ -25,6 +25,22 @@ public class MainViewModel : ViewModelBase
 
     private double CurrentDpi => BaseDpi * _zoomLevel;
 
+    // Nur der jeweils letzte Auftrag zaehlt. Fuenfmal auf Zoom+ geklickt hiess
+    // frueher: fuenf vollstaendige Neurendern des Dokuments hintereinander, und
+    // erst das letzte zeigte die eingestellte Stufe.
+    private CancellationTokenSource? _renderCts;
+
+    // Absichtlich ohne Dispose auf der alten Quelle: Auftraege, die den Token
+    // noch halten, wuerden sonst auf einer entsorgten Quelle registrieren. Eine
+    // CancellationTokenSource ohne Zeitgeber ist billig genug, um sie dem
+    // Aufraeumer zu ueberlassen.
+    private CancellationToken StartRenderBatch()
+    {
+        _renderCts?.Cancel();
+        _renderCts = new CancellationTokenSource();
+        return _renderCts.Token;
+    }
+
     // ──────────────────────────────────────────────────────────────────────────
     // Properties
     // ──────────────────────────────────────────────────────────────────────────
@@ -159,6 +175,10 @@ public class MainViewModel : ViewModelBase
     {
         var window = GetMainWindow();
 
+        // Bestellt gleich die Auftraege des vorigen Dokuments ab: sonst wartet
+        // das Laden hinter Bildern, die niemand mehr sehen wird.
+        var token = StartRenderBatch();
+
         try
         {
             _renderService.Close();
@@ -170,7 +190,7 @@ public class MainViewModel : ViewModelBase
 
             for (int i = 0; i < _renderService.PageCount; i++)
             {
-                var image = await _renderService.RenderPageAsync(i, CurrentDpi);
+                var image = await _renderService.RenderPageAsync(i, CurrentDpi, token);
                 Pages.Add(new PdfPageModel(i)
                 {
                     WidthInPoints = image.PixelSize.Width,
@@ -178,6 +198,11 @@ public class MainViewModel : ViewModelBase
                     RenderedImage = image
                 });
             }
+        }
+        catch (OperationCanceledException)
+        {
+            // Ein weiteres Dokument wurde geoeffnet, waehrend dieses noch lud.
+            // Kein Fehler, und schon gar keiner fuer einen Dialog.
         }
         catch (Exception ex)
         {
@@ -226,16 +251,22 @@ public class MainViewModel : ViewModelBase
 
             if (outputPath == CurrentFilePath)
             {
+                var token = StartRenderBatch();
                 await _renderService.LoadAsync(outputPath);
                 for (int i = 0; i < Pages.Count; i++)
                 {
-                    var image = await _renderService.RenderPageAsync(i, CurrentDpi);
+                    var image = await _renderService.RenderPageAsync(i, CurrentDpi, token);
                     Pages[i].RenderedImage = image;
                     Pages[i].WidthInPoints = image.PixelSize.Width;
                     Pages[i].HeightInPoints = image.PixelSize.Height;
                 }
             }
 
+            await ShowInfoAsync(window, "PDF erfolgreich gespeichert.");
+        }
+        catch (OperationCanceledException)
+        {
+            // Gespeichert ist gespeichert; nur die Vorschau wurde abbestellt.
             await ShowInfoAsync(window, "PDF erfolgreich gespeichert.");
         }
         catch (Exception ex)
@@ -279,21 +310,40 @@ public class MainViewModel : ViewModelBase
     {
         if (Pages.Count == 0) return;
 
+        // Erst alle Annotationen skalieren, dann erst rendern.
+        //
+        // Frueher lag beides in derselben Schleife. Ein Abbruch mittendrin
+        // haette die Annotationen der ersten Seiten skaliert und die der
+        // uebrigen nicht -- das waeren keine falschen Pixel mehr, sondern
+        // verschobene Daten. Die Skalierung ist reine Rechnung ohne
+        // Dateizugriff und laeuft deshalb vollstaendig durch, bevor irgendein
+        // Auftrag abbestellt werden kann.
         double scale = newDpi / oldDpi;
-
-        for (int i = 0; i < Pages.Count; i++)
+        foreach (var page in Pages)
         {
             // Scale annotation positions so they stay at the same relative spot on the page
-            foreach (var ann in Pages[i].Annotations)
+            foreach (var ann in page.Annotations)
             {
                 ann.X *= scale;
                 ann.Y *= scale;
             }
+        }
 
-            var image = await _renderService.RenderPageAsync(i, newDpi);
-            Pages[i].RenderedImage = image;
-            Pages[i].WidthInPoints = image.PixelSize.Width;
-            Pages[i].HeightInPoints = image.PixelSize.Height;
+        var token = StartRenderBatch();
+        try
+        {
+            for (int i = 0; i < Pages.Count; i++)
+            {
+                var image = await _renderService.RenderPageAsync(i, newDpi, token);
+                Pages[i].RenderedImage = image;
+                Pages[i].WidthInPoints = image.PixelSize.Width;
+                Pages[i].HeightInPoints = image.PixelSize.Height;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Ein neuer Zoom hat diesen Durchlauf abbestellt. Kein Fehler --
+            // und die Bilder holt der neue Durchlauf ohnehin alle nach.
         }
     }
 

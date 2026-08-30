@@ -42,16 +42,37 @@ public class PdfRenderService
         }
     }
 
-    public Task<Bitmap> RenderPageAsync(int pageIndex, double dpi = 150)
+    /// <summary>
+    /// Rendert eine Seite. Der Token bestellt einen Auftrag ab, der noch nicht
+    /// begonnen hat oder noch in der Warteschlange steht.
+    /// </summary>
+    /// <remarks>
+    /// Mitten im nativen Aufruf laesst sich nichts unterbrechen: GetDocReader
+    /// und GetImage laufen durch. Die Koernung ist damit eine Seite, und das
+    /// reicht -- eine Seite ist schnell durch, waehrend zwanzig aufgereihte
+    /// Seiten genau das sind, worum es geht.
+    /// </remarks>
+    public Task<Bitmap> RenderPageAsync(int pageIndex, double dpi = 150,
+                                        CancellationToken cancellationToken = default)
     {
         if (_filePath is null) throw new InvalidOperationException("No PDF loaded.");
         var filePath = _filePath; // capture before entering background thread
 
         return Task.Run(async () =>
         {
-            await RenderLock.WaitAsync().ConfigureAwait(false);
+            // Zwei Pruefungen, nicht eine. Hier der billige Gewinn: ein bereits
+            // abbestellter Auftrag soll die Sperre gar nicht erst nehmen.
+            cancellationToken.ThrowIfCancellationRequested();
+
+            // WaitAsync mit Token, damit auch das Warten selbst endet -- sonst
+            // haengt ein abbestellter Render weiter hinter allen vor ihm.
+            await RenderLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
+                // Und noch einmal: zwischen Anstellen und Drankommen vergeht
+                // beliebig viel Zeit, und genau in der wird abbestellt.
+                cancellationToken.ThrowIfCancellationRequested();
+
                 // PageDimensions is a max bounding box — the page scales to fit while preserving aspect ratio.
                 // US Legal (14 inches) is the largest common page size, so dpi*14 covers standard pages.
                 int maxDim = (int)(dpi * 14);
@@ -89,7 +110,7 @@ public class PdfRenderService
             {
                 RenderLock.Release();
             }
-        });
+        }, cancellationToken);
     }
 
     public void Close()

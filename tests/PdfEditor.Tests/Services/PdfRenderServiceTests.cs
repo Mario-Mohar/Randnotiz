@@ -86,6 +86,76 @@ public class PdfRenderServiceTests
         }
     }
 
+    /// <summary>Die private Sperre, um das Anstehen in der Warteschlange
+    /// ueberhaupt herstellen zu koennen.</summary>
+    private static SemaphoreSlim RenderLock =>
+        (SemaphoreSlim)typeof(PdfRenderService)
+            .GetField("RenderLock", System.Reflection.BindingFlags.NonPublic
+                                    | System.Reflection.BindingFlags.Static)!
+            .GetValue(null)!;
+
+    [Fact]
+    public async Task BereitsAbbestellterAuftrag_NimmtDieSperreGarNichtErst()
+    {
+        var path = CreatePdf(1);
+        try
+        {
+            var service = new PdfRenderService();
+            await service.LoadAsync(path);
+
+            using var cts = new CancellationTokenSource();
+            cts.Cancel();
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(
+                () => service.RenderPageAsync(0, 72, cts.Token));
+
+            // Haette der Auftrag die Sperre genommen und nicht zurueckgegeben,
+            // stuende hier alles Weitere fuer immer an.
+            Assert.Equal(1, RenderLock.CurrentCount);
+            await service.LoadAsync(path);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task AbbestellenWaehrendDesWartens_LaesstDenAuftragLos()
+    {
+        // Der eigentliche Gewinn: wer in der Warteschlange steht, soll sie
+        // verlassen koennen, statt hinter allen vor ihm auszuharren.
+        var path = CreatePdf(1);
+        var service = new PdfRenderService();
+        // Erst laden: LoadAsync braucht dieselbe Sperre, die gleich belegt wird.
+        await service.LoadAsync(path);
+
+        await RenderLock.WaitAsync();
+        try
+        {
+            using var cts = new CancellationTokenSource();
+            var render = service.RenderPageAsync(0, 72, cts.Token);
+
+            await Task.Delay(50);
+            Assert.False(render.IsCompleted, "der Auftrag muss noch anstehen");
+
+            cts.Cancel();
+
+            // Mit Frist: griffe das Abbestellen nicht, wuerde der Auftrag hier
+            // ewig anstehen und die Sperre nie zurueckgeben -- ein haengender
+            // Testlauf statt eines fehlgeschlagenen. Genau das passiert, wenn
+            // WaitAsync ohne Token aufgerufen wird.
+            var finished = await Task.WhenAny(render, Task.Delay(5000));
+            Assert.True(finished == render, "das Abbestellen muss die Warteschlange verlassen");
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => render);
+        }
+        finally
+        {
+            RenderLock.Release();
+            File.Delete(path);
+        }
+    }
+
     [Fact]
     public async Task RenderOhneGeladenesDokument_Wirft()
     {
