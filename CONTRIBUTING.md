@@ -1,8 +1,101 @@
 # Mitarbeit
 
-Danke fürs Vorbeischauen. Das Projekt ist klein, der Ablauf entsprechend kurz.
 Oberfläche und Dokumentation sind auf Deutsch; englische Beiträge sind
 willkommen, dann übersetze ich die nutzersichtbaren Texte beim Zusammenführen.
+
+## Beiträge sind erwünscht
+
+Das hier ist ein kleines Projekt, das eine einzelne Person nebenher pflegt — und
+genau deshalb ist ein fremder Blick viel wert. **Einen Fehler zu finden und
+aufzuschreiben ist ein echter Beitrag**, vermutlich sogar der nützlichste: ich
+benutze das nur auf meinem eigenen Rechner, mit meiner eigenen Einrichtung, und
+das meiste, was kaputt ist, ist dort kaputt, wo ich nie hinschaue.
+
+Drei Wege zu helfen, sortiert danach, was sie dich kosten:
+
+### 1. Etwas melden, das nicht stimmt
+
+Ein Issue mit der Vorlage **Fehlerbericht** aufmachen. Sie fragt das ab, was ich
+sonst nachfragen müsste — und eine Nachfrage kostet uns beide einen Tag.
+
+Worauf es wirklich ankommt:
+
+- **Was du erwartet hast, und was stattdessen passiert ist.** Beide Hälften.
+  „Geht nicht" ist die eine Meldung, mit der ich nichts anfangen kann.
+- **Die Schritte dorthin.** Wenn du es wiederholen kannst, schreib wie. Wenn es
+  nur einmal auftrat, schreib auch das — ein sporadischer Fehler ist trotzdem
+  wissenswert, und „ich konnte es nicht nachstellen" ist eine Information, kein
+  Ausschlussgrund.
+- **Deine Umgebung**, so wie die Vorlage danach fragt.
+
+Feil nicht daran herum. Eine grobe Meldung heute ist mehr wert als eine perfekte,
+die nie geschrieben wird. Und wenn du unsicher bist, ob etwas überhaupt ein
+Fehler ist: mach es trotzdem auf. Das zu entscheiden ist meine Aufgabe, nicht
+deine.
+
+### 2. Vorschlagen, was es können sollte
+
+Ein Issue mit der Vorlage **Funktionswunsch**.
+
+Sie fragt zuerst, was du *erreichen* willst, und erst dann, was gebaut werden
+soll. Das ist Absicht und keine Hürde: ungefähr in der Hälfte der Fälle gibt es
+einen einfacheren Weg als den, den wir beide zuerst im Kopf hatten — aber der
+zeigt sich nur, wenn ich die Ausgangslage kenne.
+
+Ein abgelehnter Wunsch ist kein vergeudetes Issue. „Jetzt nicht" und „nicht in
+diesem Projekt" bekommst du schnell und mit Begründung.
+
+### 3. Eine Korrektur oder Funktion schicken
+
+Sehr willkommen, und für Kleinigkeiten musst du nicht vorher fragen.
+
+**Bei allem, was über ein paar Zeilen hinausgeht, vorher ein Issue aufmachen** —
+oder am bestehenden kommentieren — und sagen, dass du daran arbeitest. Das kostet
+dich einen Satz und erspart dir den Fall, dass ich dasselbe am selben Abend
+behoben habe oder es anders gelöst haben wollte.
+
+Weil du in dieses Repository nicht schreiben kannst, läuft es über einen Fork:
+
+```bash
+# 1. Auf GitHub forken, dann deinen Fork klonen
+git clone https://github.com/<dein-benutzername>/Randnotiz.git
+cd Randnotiz
+
+# 2. Ein Zweig. Name egal.
+git switch -c fix/die-sache
+
+# 3. Ändern, worum es dir geht, dann die Prüfungen unten laufen lassen
+
+# 4. In deinen Fork pushen und den Pull Request aufmachen
+git push -u origin fix/die-sache
+```
+
+GitHub bietet dir danach den Knopf für den Pull Request an. Fülle die Vorlage
+aus, und wenn er ein Issue erledigt, schreib `Fixes #12` hinein — dann schließt
+es sich beim Zusammenführen von selbst.
+
+## Was danach passiert
+
+1. **Die Pipeline läuft** und schreibt einen Kommentar an deinen Pull Request,
+   mit einer Tabelle, was durchgelaufen ist. Sie aktualisiert denselben
+   Kommentar bei jedem Push, es gibt also eine Stelle zum Nachsehen statt eines
+   wachsenden Stapels.
+2. **Sie beschriftet den Pull Request** nach Umfang und Art und setzt
+   `ready-to-merge`, sobald alles grün ist.
+3. **Beim allerersten Beitrag warten die Prüfungen auf meine Freigabe.** Das
+   macht GitHub von sich aus, damit fremder Code die Rechenzeit nicht ungefragt
+   benutzt. Wenn dein Pull Request bei „waiting for approval" steht, **ist nichts
+   kaputt und du musst nichts tun** — ich muss einmal klicken.
+4. **Zusammengeführt wird von mir.** Auf den Standardzweig kommt nichts, was
+   nicht durch einen Pull Request mit grünen Prüfungen gegangen ist; das gilt
+   auch für meine eigenen Commits.
+
+Ist eine Prüfung rot, steht im Protokoll welche und warum. Frag im Pull Request
+nach, wenn es nicht offensichtlich ist — eine rote Pipeline ist keine Absage,
+und ziemlich oft liegt der Fehler bei ihr und nicht bei dir.
+
+Ich mache das neben einem Beruf, eine Antwort kann also ein paar Tage dauern.
+Das ist kein Desinteresse.
 
 ## Einrichten
 
@@ -67,7 +160,7 @@ Zwei Bindestriche in einer `csproj`-Anmerkung brechen den Build mit MSB4025.
 
 ## Pull Requests
 
-- Zweig von `master` weg. Der Zweigname ist frei.
+- Zweig von `master` weg, **in deinem Fork** (siehe oben). Der Zweigname ist frei.
 - Commit-Stil `fix(bereich):`, `feat(bereich):`, `docs:`, `chore:`. Die
   Pipeline liest das Präfix des PR-Titels für die Beschriftung.
 - Die Pipeline kommentiert das Ergebnis und aktualisiert diesen Kommentar bei
