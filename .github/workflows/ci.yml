@@ -1,0 +1,107 @@
+name: CI
+
+# Checks every push and pull request, forks included. Read access only: a fork's
+# token is read-only anyway, and a workflow that builds and runs contributed
+# code has no business holding a write one. Posting the result is a separate
+# workflow, pr-report.yml, which runs from the default branch and never
+# executes any of this.
+#
+# This is not the release build. build.yml still produces the Linux and Windows
+# bundles across its matrix; the point here is to be fast enough to be useful on
+# a pull request.
+
+on:
+  # Only the default branch on push. A branch with an open pull request would
+  # otherwise be checked twice for every commit -- once as a push and once as a
+  # pull request -- which doubles the minutes and puts two identically named
+  # status checks on the same commit.
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Formatting
+        id: format
+        continue-on-error: true
+        run: dotnet format --verify-no-changes --no-restore
+
+      - name: Build
+        id: build
+        continue-on-error: true
+        # Warnings as errors here and not in the csproj: this makes a new
+        # warning fail a pull request without also breaking `dotnet build` for
+        # somebody working locally against a half-finished change.
+        run: dotnet build --no-restore -warnaserror
+
+      - name: Tests
+        id: tests
+        continue-on-error: true
+        run: >
+          dotnet test --no-restore --no-build
+          --logger "junit;LogFilePath=${{ github.workspace }}/test-results/junit.xml"
+
+      - name: Build report
+        id: report
+        if: always()
+        env:
+          FORMAT: ${{ steps.format.outcome }}
+          BUILD: ${{ steps.build.outcome }}
+          TESTS: ${{ steps.tests.outcome }}
+        run: |
+          mark() { if [ "$1" = success ]; then echo "✅"; else echo "❌"; fi; }
+          tests_line="$(python3 .github/scripts/junit_summary.py test-results/junit.xml)"
+
+          mkdir -p pr-report
+          {
+            echo "| Check | | Detail |"
+            echo "| --- | :-: | --- |"
+            echo "| Formatting | $(mark "$FORMAT") | dotnet format |"
+            echo "| Build | $(mark "$BUILD") | warnings are errors |"
+            echo "| Tests | $(mark "$TESTS") | xunit — ${tests_line} |"
+          } > pr-report/report.md
+
+          overall=success
+          for outcome in "$FORMAT" "$BUILD" "$TESTS"; do
+            [ "$outcome" = success ] || overall=failure
+          done
+          echo "$overall" > pr-report/status.txt
+          echo "overall=$overall" >> "$GITHUB_OUTPUT"
+
+          if [ "${{ github.event_name }}" = pull_request ]; then
+            echo "${{ github.event.pull_request.number }}" > pr-report/pr-number.txt
+          fi
+          cat pr-report/report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload report
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-report
+          path: pr-report/
+          retention-days: 3
+
+      - name: Fail if a check failed
+        if: always() && steps.report.outputs.overall != 'success'
+        run: |
+          echo "One or more checks failed; the table is in the job summary."
+          exit 1
