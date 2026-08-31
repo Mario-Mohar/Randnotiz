@@ -9,3 +9,6 @@ obj/
 publish/
 publish-windows/
 publish-linux/
+
+# JUnit report written by the pipeline
+test-results/

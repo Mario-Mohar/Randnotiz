@@ -1,0 +1,39 @@
+name: Fehlerbericht
+description: Etwas verhält sich anders als es soll
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "**Bitte keine PDF mit privatem Inhalt anhängen.** Die Art des Dokuments genügt fast immer."
+  - type: textarea
+    id: what
+    attributes:
+      label: Was passiert
+      description: Was du gesehen hast, und was du stattdessen erwartet hättest.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Wo
+      options: ["Öffnen / Anzeigen", "Annotation setzen oder verschieben", "Speichern", "Zoom", "Schriftarten", "Woanders"]
+    validations:
+      required: true
+  - type: textarea
+    id: document
+    attributes:
+      label: Was für ein Dokument
+      description: "Verschlüsselt, formularbasiert, gescannt, sehr groß, ungewöhnliche Schriften, viele Seiten?"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Betriebssystem
+      options: ["Linux", "Windows"]
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version

@@ -1,0 +1,17 @@
+name: Funktionswunsch
+description: Etwas vorschlagen, das die App können sollte
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Was willst du erreichen
+      description: Die Situation, nicht die Lösung — dafür gibt es oft einen einfacheren Weg als den zuerst gedachten.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Was dir vorschwebt
+    validations:
+      required: true
