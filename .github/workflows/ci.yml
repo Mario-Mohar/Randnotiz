@@ -59,6 +59,21 @@ jobs:
         run: >
           dotnet test --no-restore --no-build
           --logger "junit;LogFilePath=${{ github.workspace }}/test-results/junit.xml"
+          --collect:"XPlat Code Coverage"
+          --results-directory ${{ github.workspace }}/coverage
+
+      # Codecov keeps the history behind the number and feeds the badge in the
+      # README. It never gates: a bad day at Codecov is no reason to fail a pull
+      # request, and a fork or a Dependabot branch has no secrets to offer
+      # anyway. The repository is public, so the upload needs no token. The
+      # collector writes cobertura into a run-specific subdirectory, hence the
+      # directory rather than a file.
+      - name: Coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v5
+        with:
+          directory: coverage
+          fail_ci_if_error: false
 
       - name: Build report
         id: report
