@@ -1,5 +1,7 @@
 # Randnotiz
 
+[![codecov](https://codecov.io/gh/Mario-Mohar/Randnotiz/graph/badge.svg)](https://codecov.io/gh/Mario-Mohar/Randnotiz)
+
 Ein schlanker, plattformübergreifender PDF-Editor zum Öffnen und Kommentieren von PDF-Dokumenten.
 
 ## Features
