@@ -3,6 +3,7 @@
         xmlns:vm="clr-namespace:Randnotiz.ViewModels"
         xmlns:views="clr-namespace:Randnotiz.Views"
         x:Class="Randnotiz.MainWindow"
+        x:DataType="vm:MainViewModel"
         Title="Randnotiz"
         Icon="avares://Randnotiz/Assets/icon.png" Height="800" Width="1100"
         WindowStartupLocation="CenterScreen"

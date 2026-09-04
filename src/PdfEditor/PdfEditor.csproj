@@ -15,29 +15,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="11.2.3" />
-    <PackageReference Include="Avalonia.Desktop" Version="11.2.3" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.2.3" />
+    <PackageReference Include="Avalonia" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.1" />
     <PackageReference Include="Docnet.Core" Version="2.6.0" />
     <PackageReference Include="PDFsharp" Version="6.2.4" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!--
-      Hebt die transitive Aufloesung an: Avalonia.Desktop -> Avalonia.X11 ->
-      Avalonia.FreeDesktop zieht Tmds.DBus.Protocol 0.20.0 herein, und das hat
-      GHSA-xrw6-gwf8-vvr9 (CVSS 7.1): boesartige D-Bus-Gegenstellen koennen
-      Signale faelschen und Dateideskriptoren erschoepfen. Behoben in 0.21.3.
-
-      Ein Avalonia-Update loest das nicht: auch 11.3.7 haengt noch an 0.21.2.
-      Erst Avalonia 12 zieht eine ausreichende Version (12.1.1 -> 0.94.1).
-
-      Wieder entfernen, sobald Avalonia von selbst mindestens 0.21.3
-      aufloest; sonst haelt dieser Pin spaeter eine neuere Version zurueck.
-      Pruefen mit:
-      dotnet nuget why src/PdfEditor/PdfEditor.csproj Tmds.DBus.Protocol
-    -->
-    <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3" />
   </ItemGroup>
 
 </Project>

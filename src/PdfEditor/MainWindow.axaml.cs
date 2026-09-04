@@ -16,16 +16,16 @@ public partial class MainWindow : Window
 
     private static void OnDragOver(object? sender, DragEventArgs e)
     {
-        e.DragEffects = e.Data.Contains(DataFormats.Files)
+        e.DragEffects = e.DataTransfer.Contains(DataFormat.File)
             ? DragDropEffects.Copy
             : DragDropEffects.None;
     }
 
     private async void OnDrop(object? sender, DragEventArgs e)
     {
-        if (!e.Data.Contains(DataFormats.Files)) return;
+        if (!e.DataTransfer.Contains(DataFormat.File)) return;
 
-        var pdfFile = e.Data.GetFiles()
+        var pdfFile = e.DataTransfer.TryGetFiles()
             ?.FirstOrDefault(f => f.TryGetLocalPath()
                 ?.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) == true);
 
