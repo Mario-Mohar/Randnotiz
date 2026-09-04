@@ -23,4 +23,4 @@
 - [ ] `dotnet format --verify-no-changes`, `dotnet build -warnaserror` und `dotnet test` laufen durch
 - [ ] Speichern kann die Ausgangsdatei unter keinen Umständen beschädigen
 - [ ] Tests, die selbst eine Sperre halten, haben eine Frist und können nicht hängen
-- [ ] Der Pin auf `Tmds.DBus.Protocol` ist unverändert, oder die Anhebung ist oben begründet
+- [ ] Kein neuer Pin auf eine Paketversion ohne Ausstiegsbedingung als Kommentar daneben
