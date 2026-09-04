@@ -147,13 +147,14 @@ sonst steht der Testlauf still, statt rot zu werden.
 **Speichern darf die Ausgangsdatei nie beschädigen.** Wer am Speicherpfad
 arbeitet, schreibt erst vollständig woandershin und ersetzt dann.
 
-**`Tmds.DBus.Protocol` ist absichtlich festgenagelt.** Avalonia.FreeDesktop
-zieht transitiv 0.20.0 herein, das eine bekannte Schwachstelle hat
-(GHSA-xrw6-gwf8-vvr9). Der direkte Verweis auf 0.21.3 hebt die Auflösung an.
-**Ein Avalonia-Update löst das nicht** — auch 11.3.7 hängt noch an 0.21.2, der
-Fix ist erst 0.21.3; frühestens Avalonia 12 zieht genug nach. Die
-Ausstiegsbedingung steht als Kommentar in der `csproj`. Bitte weder entfernen
-noch stillschweigend anheben.
+**`Tmds.DBus.Protocol` war bis Avalonia 12 festgenagelt.** Avalonia.FreeDesktop
+zog transitiv 0.20.0 herein, das eine bekannte Schwachstelle hat
+(GHSA-xrw6-gwf8-vvr9), und ein direkter Verweis auf 0.21.3 hob die Auflösung an.
+Mit Avalonia 12.1.1 löst die Kette von selbst 0.94.1 auf, der Pin ist damit
+weg. Falls du an den Abhängigkeiten arbeitest: prüfe solche Fälle mit
+`dotnet nuget why src/PdfEditor/PdfEditor.csproj <Paket>`, und wenn du einen
+Pin setzt, schreib die Ausstiegsbedingung als Kommentar daneben. Ohne die weiß
+später niemand, wann er wieder weg darf.
 
 Eine Kleinigkeit, die dabei Zeit kostet: **XML-Kommentare vertragen kein `--`.**
 Zwei Bindestriche in einer `csproj`-Anmerkung brechen den Build mit MSB4025.
