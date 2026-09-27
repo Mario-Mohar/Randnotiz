@@ -15,7 +15,17 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
+          # Bewusst festgenagelt und bewusst auf das AELTESTE noch
+          # unterstuetzte Bild, nicht ubuntu-latest: hier entsteht ein
+          # self-contained Build, der auf fremden Rechnern laufen muss. Die
+          # glibc des Bauwirts ist die Mindestanforderung der fertigen Datei.
+          #
+          # ubuntu-latest wird ab dem 19.10.2026 Ubuntu 26.04
+          # (actions/runner-images#14748). Damit waere die Anforderung still von
+          # glibc 2.39 auf 2.43 gestiegen, ohne dass ein Lauf rot wird und ohne
+          # dass es jemandem auffaellt, bis ein Nutzer die Datei nicht starten
+          # kann. Beide Werte am 2026-09-27 auf den Runnern gemessen.
+          - os: ubuntu-24.04
             rid: linux-x64
             artifact: Randnotiz-linux-x64
           - os: windows-latest
@@ -49,7 +59,7 @@ jobs:
           -o out/${{ matrix.artifact }}
 
       - name: Set executable bit and zip (Linux)
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-24.04'
         run: |
           chmod +x out/${{ matrix.artifact }}/Randnotiz
           printf '#!/bin/bash\nDIR="$(cd "$(dirname "$0")" && pwd)"\n"$DIR/Randnotiz" "$@"\n' \
