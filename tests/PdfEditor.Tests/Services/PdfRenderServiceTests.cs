@@ -9,13 +9,12 @@ namespace Randnotiz.Tests.Services;
 /// <summary>
 /// Laden und Rendern greifen beide auf dieselbe native pdfium-Instanz zu.
 /// Diese Tests fahren genau das Muster, das die Sperre absichern soll:
-/// gleichzeitige Zugriffe auf DocLib.Instance aus mehreren Aufgaben.
+/// gleichzeitige Zugriffe auf PDFium aus mehreren Aufgaben.
 ///
-/// Das Rendern selbst laesst sich hier nicht zu Ende pruefen -- WriteableBitmap
-/// braucht eine Avalonia-Renderplattform, die dieses Testprojekt nicht
-/// aufsetzt. Geprueft wird deshalb der Teil, an dem die native Bibliothek
-/// haengt; die Bitmap dahinter ist reine Speicherkopie.
+/// Das Rendern selbst samt Pixelmassen und Bitmap pruefen die
+/// PdfRenderingTests.
 /// </summary>
+[Collection(PdfiumCollection.Name)]
 public class PdfRenderServiceTests
 {
     private static string CreatePdf(int pageCount)
