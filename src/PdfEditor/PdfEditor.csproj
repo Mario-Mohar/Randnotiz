@@ -11,14 +11,23 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="PdfEditor.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <AvaloniaResource Include="Assets/**" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="12.1.3" />
-    <PackageReference Include="Avalonia.Desktop" Version="12.1.3" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.3" />
-    <PackageReference Include="Docnet.Core" Version="2.6.0" />
+    <PackageReference Include="Avalonia" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.4" />
+    <!-- Nur die nativen PDFium-Builds (Apache-2.0), die Anbindung steht in
+         Services/Pdfium.cs. Bewusst nur die beiden Plattformen, fuer die
+         Randnotiz gebaut wird, nicht das Sammelpaket mit Android, iOS und
+         WebAssembly. Linux und Win32 immer mit derselben Version anheben. -->
+    <PackageReference Include="bblanchon.PDFium.Linux" Version="157.0.8086" />
+    <PackageReference Include="bblanchon.PDFium.Win32" Version="157.0.8086" />
     <PackageReference Include="PDFsharp" Version="6.2.4" />
   </ItemGroup>
 
