@@ -19,9 +19,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="12.1.3" />
-    <PackageReference Include="Avalonia.Desktop" Version="12.1.3" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.3" />
+    <PackageReference Include="Avalonia" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.4" />
     <!-- Nur die nativen PDFium-Builds (Apache-2.0), die Anbindung steht in
          Services/Pdfium.cs. Bewusst nur die beiden Plattformen, fuer die
          Randnotiz gebaut wird, nicht das Sammelpaket mit Android, iOS und
