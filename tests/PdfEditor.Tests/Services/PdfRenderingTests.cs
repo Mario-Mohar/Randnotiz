@@ -80,6 +80,29 @@ public class PdfRenderingTests
         }
     }
 
+    [Theory]
+    [InlineData(595, 842, 0, 595, 842)]
+    [InlineData(595, 842, 90, 842, 595)]
+    [InlineData(595, 842, 180, 595, 842)]
+    [InlineData(300.5, 200.25, 270, 200.25, 300.5)]
+    public async Task Seitengroesse_InPunktenMitDrehung(
+        double width, double height, int rotate, double expectedWidth, double expectedHeight)
+    {
+        var path = CreatePdf(null, (width, height, rotate));
+        try
+        {
+            var service = new PdfRenderService();
+            await service.LoadAsync(path);
+            var (w, h) = service.GetPageSize(0);
+            Assert.Equal(expectedWidth, w, 0.01);
+            Assert.Equal(expectedHeight, h, 0.01);
+        }
+        finally
+        {
+            Delete(path);
+        }
+    }
+
     [Fact]
     public async Task Seite_IstNichtLeerUndRichtigHerum()
     {

@@ -21,14 +21,11 @@ public class PdfSaveService
             {
                 if (string.IsNullOrEmpty(annotation.Text)) continue;
 
-                // Convert from display coordinates to PDF points
-                double scaleX = pdfPage.Width.Point / pageModel.WidthInPoints;
-                double scaleY = pdfPage.Height.Point / pageModel.HeightInPoints;
+                // Position und Groesse sind schon PDF-Punkte, unabhaengig vom Zoom.
+                var font = new XFont(annotation.FontFamily, annotation.FontSize);
 
-                var font = new XFont(annotation.FontFamily, annotation.FontSize * scaleY);
-
-                double pdfX = annotation.X * scaleX;
-                double pdfY = annotation.Y * scaleY;
+                double pdfX = annotation.X;
+                double pdfY = annotation.Y;
 
                 // Top-left alignment to match WPF Canvas positioning
                 var format = new XStringFormat

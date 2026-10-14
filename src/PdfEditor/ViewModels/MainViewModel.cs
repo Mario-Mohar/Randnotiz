@@ -89,12 +89,11 @@ public class MainViewModel : ViewModelBase
         get => _zoomLevel;
         private set
         {
-            double oldDpi = CurrentDpi;
             if (!SetProperty(ref _zoomLevel, value)) return;
             OnPropertyChanged(nameof(ZoomText));
             ZoomInCommand.RaiseCanExecuteChanged();
             ZoomOutCommand.RaiseCanExecuteChanged();
-            _ = RerenderAllPagesAsync(oldDpi, CurrentDpi);
+            _ = RerenderAllPagesAsync(CurrentDpi);
         }
     }
 
@@ -191,10 +190,11 @@ public class MainViewModel : ViewModelBase
             for (int i = 0; i < _renderService.PageCount; i++)
             {
                 var image = await _renderService.RenderPageAsync(i, CurrentDpi, token);
+                var (width, height) = _renderService.GetPageSize(i);
                 Pages.Add(new PdfPageModel(i)
                 {
-                    WidthInPoints = image.PixelSize.Width,
-                    HeightInPoints = image.PixelSize.Height,
+                    WidthInPoints = width,
+                    HeightInPoints = height,
                     RenderedImage = image
                 });
             }
@@ -257,8 +257,6 @@ public class MainViewModel : ViewModelBase
                 {
                     var image = await _renderService.RenderPageAsync(i, CurrentDpi, token);
                     Pages[i].RenderedImage = image;
-                    Pages[i].WidthInPoints = image.PixelSize.Width;
-                    Pages[i].HeightInPoints = image.PixelSize.Height;
                 }
             }
 
@@ -306,29 +304,15 @@ public class MainViewModel : ViewModelBase
     // Zoom
     // ──────────────────────────────────────────────────────────────────────────
 
-    private async Task RerenderAllPagesAsync(double oldDpi, double newDpi)
+    private async Task RerenderAllPagesAsync(double newDpi)
     {
         if (Pages.Count == 0) return;
 
-        // Erst alle Annotationen skalieren, dann erst rendern.
-        //
-        // Frueher lag beides in derselben Schleife. Ein Abbruch mittendrin
-        // haette die Annotationen der ersten Seiten skaliert und die der
-        // uebrigen nicht -- das waeren keine falschen Pixel mehr, sondern
-        // verschobene Daten. Die Skalierung ist reine Rechnung ohne
-        // Dateizugriff und laeuft deshalb vollstaendig durch, bevor irgendein
-        // Auftrag abbestellt werden kann.
-        double scale = newDpi / oldDpi;
-        foreach (var page in Pages)
-        {
-            // Scale annotation positions so they stay at the same relative spot on the page
-            foreach (var ann in page.Annotations)
-            {
-                ann.X *= scale;
-                ann.Y *= scale;
-            }
-        }
-
+        // Die Annotationen liegen in PDF-Punkten und bleiben beim Zoom, wie
+        // sie sind. Mit dem neuen Bild meldet die Seite einen neuen
+        // DisplayScale, und die Anzeige rechnet selbst nach. Frueher wurden
+        // hier X und Y mitskaliert, die Schriftgroesse aber nicht -- daher
+        // hing die gespeicherte Groesse vom Zoom ab (#19).
         var token = StartRenderBatch();
         try
         {
@@ -336,8 +320,6 @@ public class MainViewModel : ViewModelBase
             {
                 var image = await _renderService.RenderPageAsync(i, newDpi, token);
                 Pages[i].RenderedImage = image;
-                Pages[i].WidthInPoints = image.PixelSize.Width;
-                Pages[i].HeightInPoints = image.PixelSize.Height;
             }
         }
         catch (OperationCanceledException)

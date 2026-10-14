@@ -3,6 +3,12 @@ using System.Runtime.CompilerServices;
 
 namespace Randnotiz.Models;
 
+/// <summary>
+/// Ein Text auf einer Seite. <see cref="X"/>, <see cref="Y"/> und
+/// <see cref="FontSize"/> sind PDF-Punkte, gemessen von der linken oberen Ecke
+/// der Seite, so wie sie angezeigt wird (also nach /Rotate). Mit dem Zoom
+/// aendert sich daran nichts.
+/// </summary>
 public class TextAnnotation : INotifyPropertyChanged
 {
     private double _x;

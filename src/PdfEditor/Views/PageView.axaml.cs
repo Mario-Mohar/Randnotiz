@@ -17,8 +17,11 @@ public partial class PageView : UserControl
     private TextAnnotation? _dragging;
     private Point _dragOffset;
 
-    // Tracks the visual control and property-change handler for each annotation.
-    private readonly Dictionary<TextAnnotation, (Control Control, PropertyChangedEventHandler Handler)> _annotationData = [];
+    // Tracks the visual control, property-change handler and layout refresh for each annotation.
+    private readonly Dictionary<TextAnnotation, (Control Control, PropertyChangedEventHandler Handler, Action Relayout)> _annotationData = [];
+
+    // Annotationen liegen in PDF-Punkten, die Flaeche in Anzeigeeinheiten.
+    private double Scale => _currentPage?.DisplayScale ?? 1.0;
 
     public PageView()
     {
@@ -36,7 +39,8 @@ public partial class PageView : UserControl
         if (_currentPage is not null)
         {
             _currentPage.Annotations.CollectionChanged -= OnAnnotationsChanged;
-            foreach (var (ann, (_, handler)) in _annotationData)
+            _currentPage.PropertyChanged -= OnPagePropertyChanged;
+            foreach (var (ann, (_, handler, _)) in _annotationData)
                 ann.PropertyChanged -= handler;
             _annotationData.Clear();
             AnnotationCanvas.Children.Clear();
@@ -47,9 +51,18 @@ public partial class PageView : UserControl
 
         _currentPage = page;
         page.Annotations.CollectionChanged += OnAnnotationsChanged;
+        page.PropertyChanged += OnPagePropertyChanged;
 
         foreach (var annotation in page.Annotations)
             AddAnnotationControl(annotation);
+    }
+
+    private void OnPagePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        // Neuer Zoom, neues Bild: die Punkte bleiben, nur die Anzeige zieht nach.
+        if (e.PropertyName != nameof(PdfPageModel.DisplayScale)) return;
+        foreach (var (_, _, relayout) in _annotationData.Values)
+            relayout();
     }
 
     private void OnAnnotationsChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -73,7 +86,6 @@ public partial class PageView : UserControl
         var textBlock = new TextBlock
         {
             Text = annotation.Text,
-            FontSize = annotation.FontSize,
             FontFamily = new FontFamily(annotation.FontFamily),
             Foreground = Brushes.Black,
             Cursor = new Cursor(StandardCursorType.SizeAll),
@@ -84,7 +96,6 @@ public partial class PageView : UserControl
         var textBox = new TextBox
         {
             Text = annotation.Text,
-            FontSize = annotation.FontSize,
             FontFamily = new FontFamily(annotation.FontFamily),
             Background = Brushes.White,
             Foreground = Brushes.Black,
@@ -99,8 +110,18 @@ public partial class PageView : UserControl
         var grid = new Grid();
         grid.Children.Add(textBlock);
         grid.Children.Add(textBox);
-        Canvas.SetLeft(grid, annotation.X);
-        Canvas.SetTop(grid, annotation.Y);
+
+        // Punkte -> Anzeige. Die Schrift waechst mit, damit die Anzeige zeigt,
+        // was beim Speichern in der Datei landet.
+        void Relayout()
+        {
+            double scale = Scale;
+            Canvas.SetLeft(grid, annotation.X * scale);
+            Canvas.SetTop(grid, annotation.Y * scale);
+            textBlock.FontSize = annotation.FontSize * scale;
+            textBox.FontSize = annotation.FontSize * scale;
+        }
+        Relayout();
 
         // TextBox → model (two-way: external model changes are pushed by propHandler below)
         textBox.TextChanged += (_, _) => annotation.Text = textBox.Text ?? "";
@@ -128,8 +149,8 @@ public partial class PageView : UserControl
         {
             if (_dragging != annotation) return;
             var pos = e.GetPosition(AnnotationCanvas);
-            annotation.X = pos.X - _dragOffset.X;
-            annotation.Y = pos.Y - _dragOffset.Y;
+            annotation.X = (pos.X - _dragOffset.X) / Scale;
+            annotation.Y = (pos.Y - _dragOffset.Y) / Scale;
         };
 
         grid.PointerReleased += (_, e) =>
@@ -163,19 +184,14 @@ public partial class PageView : UserControl
             switch (e.PropertyName)
             {
                 case nameof(TextAnnotation.X):
-                    Canvas.SetLeft(grid, annotation.X);
-                    break;
                 case nameof(TextAnnotation.Y):
-                    Canvas.SetTop(grid, annotation.Y);
+                case nameof(TextAnnotation.FontSize):
+                    Relayout();
                     break;
                 case nameof(TextAnnotation.Text):
                     textBlock.Text = annotation.Text;
                     if (textBox.Text != annotation.Text)
                         textBox.Text = annotation.Text;
-                    break;
-                case nameof(TextAnnotation.FontSize):
-                    textBlock.FontSize = annotation.FontSize;
-                    textBox.FontSize = annotation.FontSize;
                     break;
                 case nameof(TextAnnotation.FontFamily):
                     var ff = new FontFamily(annotation.FontFamily);
@@ -202,7 +218,7 @@ public partial class PageView : UserControl
             FocusTextBox(textBox);
 
         AnnotationCanvas.Children.Add(grid);
-        _annotationData[annotation] = (grid, propHandler);
+        _annotationData[annotation] = (grid, propHandler, Relayout);
     }
 
     private void RemoveAnnotationControl(TextAnnotation annotation)
@@ -223,7 +239,8 @@ public partial class PageView : UserControl
         if (DataContext is not PdfPageModel page) return;
 
         var pos = e.GetPosition(AnnotationCanvas);
-        GetMainViewModel()?.AddAnnotation(page.PageIndex, pos.X, pos.Y);
+        double scale = Scale;
+        GetMainViewModel()?.AddAnnotation(page.PageIndex, pos.X / scale, pos.Y / scale);
         e.Handled = true;
     }
 

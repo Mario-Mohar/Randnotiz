@@ -49,6 +49,10 @@ internal static class Pdfium
     [DllImport(Lib)] internal static extern void FPDF_ClosePage(IntPtr page);
     [DllImport(Lib)] internal static extern double FPDF_GetPageWidth(IntPtr page);
     [DllImport(Lib)] internal static extern double FPDF_GetPageHeight(IntPtr page);
+    // Groesse ohne die Seite zu laden, /Rotate ist schon eingerechnet.
+    [DllImport(Lib)]
+    internal static extern int FPDF_GetPageSizeByIndex(
+        IntPtr document, int pageIndex, out double width, out double height);
     [DllImport(Lib)] internal static extern IntPtr FPDFBitmap_Create(int width, int height, int alpha);
     [DllImport(Lib)] internal static extern void FPDFBitmap_Destroy(IntPtr bitmap);
     [DllImport(Lib)] internal static extern int FPDFBitmap_GetStride(IntPtr bitmap);
