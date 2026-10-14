@@ -53,14 +53,14 @@ public class AnnotationPlacementTests
 
         int left = int.MaxValue, top = int.MaxValue, right = -1, bottom = -1;
         for (int y = 0; y < page.Height; y++)
-        for (int x = 0; x < page.Width; x++)
-        {
-            if (page.Pixels[(y * page.Width + x) * 4 + 3] < 128) continue;
-            left = Math.Min(left, x);
-            top = Math.Min(top, y);
-            right = Math.Max(right, x);
-            bottom = Math.Max(bottom, y);
-        }
+            for (int x = 0; x < page.Width; x++)
+            {
+                if (page.Pixels[(y * page.Width + x) * 4 + 3] < 128) continue;
+                left = Math.Min(left, x);
+                top = Math.Min(top, y);
+                right = Math.Max(right, x);
+                bottom = Math.Max(bottom, y);
+            }
         if (right < 0) return null;
         return (left / scale, top / scale, (right + 1) / scale, (bottom + 1) / scale);
     }
