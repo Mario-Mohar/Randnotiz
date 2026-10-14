@@ -156,4 +156,38 @@ public class MainViewModelTests
             AnnotationPlacementTests.Delete(input);
         }
     }
+
+    [Fact]
+    public async Task GedrehteSeite_TextLandetObenLinks()
+    {
+        // #20 nachgestellt: A4 hoch mit /Rotate 90 oeffnen, oben links Text
+        // setzen, speichern und neu laden.
+        var input = AnnotationPlacementTests.CreateBlankPdf((595, 842, 90));
+        try
+        {
+            var (width, height) = await OnUi(async () =>
+            {
+                var vm = new MainViewModel();
+                await vm.LoadFileAsync(input);
+                vm.AddAnnotation(0, 40, 30);
+                vm.Pages[0].Annotations.Single().Text = "Oben links";
+                await vm.SaveToAsync(input);
+                return (vm.Pages[0].WidthInPoints, vm.Pages[0].HeightInPoints);
+            });
+
+            Assert.Equal(842, width, 0.01);
+            Assert.Equal(595, height, 0.01);
+
+            var ink = await AnnotationPlacementTests.InkBounds(input);
+            Assert.NotNull(ink);
+            var (left, top, right, bottom) = ink.Value;
+            Assert.InRange(left, 40, 44);
+            Assert.InRange(top, 30, 38);
+            Assert.True(right - left > bottom - top, $"Text steht quer: {ink}");
+        }
+        finally
+        {
+            AnnotationPlacementTests.Delete(input);
+        }
+    }
 }
