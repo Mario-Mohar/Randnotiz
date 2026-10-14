@@ -239,27 +239,7 @@ public class MainViewModel : ViewModelBase
 
         try
         {
-            string tempPath = outputPath + ".tmp";
-            _saveService.Save(CurrentFilePath, tempPath, Pages.ToList());
-
-            if (outputPath == CurrentFilePath)
-                _renderService.Close();
-
-            if (System.IO.File.Exists(outputPath))
-                System.IO.File.Delete(outputPath);
-            System.IO.File.Move(tempPath, outputPath);
-
-            if (outputPath == CurrentFilePath)
-            {
-                var token = StartRenderBatch();
-                await _renderService.LoadAsync(outputPath);
-                for (int i = 0; i < Pages.Count; i++)
-                {
-                    var image = await _renderService.RenderPageAsync(i, CurrentDpi, token);
-                    Pages[i].RenderedImage = image;
-                }
-            }
-
+            await SaveToAsync(outputPath);
             await ShowInfoAsync(window, "PDF erfolgreich gespeichert.");
         }
         catch (OperationCanceledException)
@@ -270,6 +250,44 @@ public class MainViewModel : ViewModelBase
         catch (Exception ex)
         {
             await ShowErrorAsync(window, $"Fehler beim Speichern:\n{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Schreibt die Annotationen in <paramref name="outputPath"/>. Ohne
+    /// Dialoge, damit es sich testen laesst; Fehler gehen an den Aufrufer.
+    /// </summary>
+    internal async Task SaveToAsync(string outputPath)
+    {
+        if (CurrentFilePath is null) return;
+
+        string tempPath = outputPath + ".tmp";
+        _saveService.Save(CurrentFilePath, tempPath, Pages.ToList());
+
+        bool overwritesSource = outputPath == CurrentFilePath;
+        if (overwritesSource)
+            _renderService.Close();
+
+        if (System.IO.File.Exists(outputPath))
+            System.IO.File.Delete(outputPath);
+        System.IO.File.Move(tempPath, outputPath);
+
+        if (!overwritesSource) return;
+
+        // Die Annotationen stehen jetzt im Seiteninhalt der Quelle. Blieben
+        // sie zusaetzlich bearbeitbar, schriebe das naechste Speichern sie ein
+        // zweites Mal hinein, und nach dem Verschieben stuende der alte Text
+        // weiter in der Datei (#18). Ab hier zeigt das neu gerenderte Bild sie.
+        SelectedAnnotation = null;
+        foreach (var page in Pages)
+            page.Annotations.Clear();
+
+        var token = StartRenderBatch();
+        await _renderService.LoadAsync(outputPath);
+        for (int i = 0; i < Pages.Count; i++)
+        {
+            var image = await _renderService.RenderPageAsync(i, CurrentDpi, token);
+            Pages[i].RenderedImage = image;
         }
     }
 

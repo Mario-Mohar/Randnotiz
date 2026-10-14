@@ -1,4 +1,7 @@
 using PdfSharp.Fonts;
+using PdfSharp.Pdf.Content;
+using PdfSharp.Pdf.Content.Objects;
+using PdfSharp.Pdf.IO;
 using Randnotiz.Services;
 using Randnotiz.Tests.Services;
 using Randnotiz.ViewModels;
@@ -64,6 +67,89 @@ public class MainViewModelTests
             Assert.InRange(bottom - top, 12 * 0.65, 12 * 0.8);
             Assert.InRange(left, 100, 104);
             Assert.InRange(top, 200, 206);
+        }
+        finally
+        {
+            AnnotationPlacementTests.Delete(input);
+        }
+    }
+
+    /// <summary>Zaehlt die Textoperatoren (Tj, TJ, ' und ") auf einer Seite,
+    /// also wie oft Text in den Inhalt geschrieben wurde.</summary>
+    private static int CountTextShows(string path, int pageIndex = 0)
+    {
+        using var doc = PdfReader.Open(path, PdfDocumentOpenMode.Import);
+        int Count(CSequence seq) => seq.Sum(o => o switch
+        {
+            COperator op when op.OpCode.Name is "Tj" or "TJ" or "'" or "\"" => 1,
+            CSequence inner => Count(inner),
+            _ => 0
+        });
+        return Count(ContentReader.ReadContent(doc.Pages[pageIndex]));
+    }
+
+    [Fact]
+    public async Task MehrfachSpeichern_SchreibtJedenTextGenauEinmal()
+    {
+        // Nachgestellt wie in #18: eintippen, zweimal speichern, dann weiter
+        // arbeiten und nochmal speichern.
+        var input = AnnotationPlacementTests.CreateBlankPdf((595, 842, 0));
+        try
+        {
+            var (afterFirst, afterSecond, left, selected) = await OnUi(async () =>
+            {
+                var vm = new MainViewModel();
+                await vm.LoadFileAsync(input);
+                vm.AddAnnotation(0, 100, 100);
+                vm.Pages[0].Annotations.Single().Text = "Erster";
+
+                await vm.SaveToAsync(input);
+                int first = CountTextShows(input);
+                await vm.SaveToAsync(input);
+                int second = CountTextShows(input);
+                int remaining = vm.Pages[0].Annotations.Count;
+                bool hasSelection = vm.SelectedAnnotation is not null;
+
+                vm.AddAnnotation(0, 300, 500);
+                vm.Pages[0].Annotations.Single().Text = "Zweiter";
+                await vm.SaveToAsync(input);
+                return (first, second, remaining, hasSelection);
+            });
+
+            Assert.Equal(1, afterFirst);
+            Assert.Equal(1, afterSecond);
+            Assert.Equal(0, left);
+            Assert.False(selected);
+            Assert.Equal(2, CountTextShows(input));
+        }
+        finally
+        {
+            AnnotationPlacementTests.Delete(input);
+        }
+    }
+
+    [Fact]
+    public async Task SpeichernUnter_LaesstQuelleUndAnnotationenStehen()
+    {
+        // Die Quelle bleibt unberuehrt, also bleiben die Annotationen
+        // bearbeitbar: das naechste Speichern schreibt sie genau einmal.
+        var input = AnnotationPlacementTests.CreateBlankPdf((595, 842, 0));
+        var other = Path.Combine(Path.GetDirectoryName(input)!, "kopie.pdf");
+        try
+        {
+            int remaining = await OnUi(async () =>
+            {
+                var vm = new MainViewModel();
+                await vm.LoadFileAsync(input);
+                vm.AddAnnotation(0, 100, 100);
+                vm.Pages[0].Annotations.Single().Text = "Erster";
+                await vm.SaveToAsync(other);
+                return vm.Pages[0].Annotations.Count;
+            });
+
+            Assert.Equal(1, remaining);
+            Assert.Equal(0, CountTextShows(input));
+            Assert.Equal(1, CountTextShows(other));
         }
         finally
         {

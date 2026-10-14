@@ -67,6 +67,14 @@ public partial class PageView : UserControl
 
     private void OnAnnotationsChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
+        // Clear() meldet nur Reset, ohne OldItems.
+        if (e.Action == NotifyCollectionChangedAction.Reset)
+        {
+            foreach (var ann in _annotationData.Keys.ToList())
+                RemoveAnnotationControl(ann);
+            return;
+        }
+
         if (e.NewItems is not null)
             foreach (TextAnnotation ann in e.NewItems)
                 AddAnnotationControl(ann);
