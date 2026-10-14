@@ -9,7 +9,7 @@ Ein schlanker, plattformübergreifender PDF-Editor zum Öffnen und Kommentieren 
 - PDF-Dateien öffnen und anzeigen (auch per Drag & Drop)
 - Text-Annotationen auf beliebigen Stellen hinzufügen, verschieben und löschen
 - Schriftart und Schriftgröße frei wählbar
-- Zoom von 50% bis 200%
+- Zoom von 100% bis 300%
 - Änderungen direkt in die PDF-Datei speichern
 - Läuft nativ auf **Windows** und **Linux** (inkl. Arch-basierte Systeme wie CachyOS)
 

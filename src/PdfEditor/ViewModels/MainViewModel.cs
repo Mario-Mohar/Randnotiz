@@ -89,12 +89,11 @@ public class MainViewModel : ViewModelBase
         get => _zoomLevel;
         private set
         {
-            double oldDpi = CurrentDpi;
             if (!SetProperty(ref _zoomLevel, value)) return;
             OnPropertyChanged(nameof(ZoomText));
             ZoomInCommand.RaiseCanExecuteChanged();
             ZoomOutCommand.RaiseCanExecuteChanged();
-            _ = RerenderAllPagesAsync(oldDpi, CurrentDpi);
+            _ = RerenderAllPagesAsync(CurrentDpi);
         }
     }
 
@@ -191,10 +190,11 @@ public class MainViewModel : ViewModelBase
             for (int i = 0; i < _renderService.PageCount; i++)
             {
                 var image = await _renderService.RenderPageAsync(i, CurrentDpi, token);
+                var (width, height) = _renderService.GetPageSize(i);
                 Pages.Add(new PdfPageModel(i)
                 {
-                    WidthInPoints = image.PixelSize.Width,
-                    HeightInPoints = image.PixelSize.Height,
+                    WidthInPoints = width,
+                    HeightInPoints = height,
                     RenderedImage = image
                 });
             }
@@ -239,29 +239,7 @@ public class MainViewModel : ViewModelBase
 
         try
         {
-            string tempPath = outputPath + ".tmp";
-            _saveService.Save(CurrentFilePath, tempPath, Pages.ToList());
-
-            if (outputPath == CurrentFilePath)
-                _renderService.Close();
-
-            if (System.IO.File.Exists(outputPath))
-                System.IO.File.Delete(outputPath);
-            System.IO.File.Move(tempPath, outputPath);
-
-            if (outputPath == CurrentFilePath)
-            {
-                var token = StartRenderBatch();
-                await _renderService.LoadAsync(outputPath);
-                for (int i = 0; i < Pages.Count; i++)
-                {
-                    var image = await _renderService.RenderPageAsync(i, CurrentDpi, token);
-                    Pages[i].RenderedImage = image;
-                    Pages[i].WidthInPoints = image.PixelSize.Width;
-                    Pages[i].HeightInPoints = image.PixelSize.Height;
-                }
-            }
-
+            await SaveToAsync(outputPath);
             await ShowInfoAsync(window, "PDF erfolgreich gespeichert.");
         }
         catch (OperationCanceledException)
@@ -272,6 +250,44 @@ public class MainViewModel : ViewModelBase
         catch (Exception ex)
         {
             await ShowErrorAsync(window, $"Fehler beim Speichern:\n{ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Schreibt die Annotationen in <paramref name="outputPath"/>. Ohne
+    /// Dialoge, damit es sich testen laesst; Fehler gehen an den Aufrufer.
+    /// </summary>
+    internal async Task SaveToAsync(string outputPath)
+    {
+        if (CurrentFilePath is null) return;
+
+        string tempPath = outputPath + ".tmp";
+        _saveService.Save(CurrentFilePath, tempPath, Pages.ToList());
+
+        bool overwritesSource = outputPath == CurrentFilePath;
+        if (overwritesSource)
+            _renderService.Close();
+
+        if (System.IO.File.Exists(outputPath))
+            System.IO.File.Delete(outputPath);
+        System.IO.File.Move(tempPath, outputPath);
+
+        if (!overwritesSource) return;
+
+        // Die Annotationen stehen jetzt im Seiteninhalt der Quelle. Blieben
+        // sie zusaetzlich bearbeitbar, schriebe das naechste Speichern sie ein
+        // zweites Mal hinein, und nach dem Verschieben stuende der alte Text
+        // weiter in der Datei (#18). Ab hier zeigt das neu gerenderte Bild sie.
+        SelectedAnnotation = null;
+        foreach (var page in Pages)
+            page.Annotations.Clear();
+
+        var token = StartRenderBatch();
+        await _renderService.LoadAsync(outputPath);
+        for (int i = 0; i < Pages.Count; i++)
+        {
+            var image = await _renderService.RenderPageAsync(i, CurrentDpi, token);
+            Pages[i].RenderedImage = image;
         }
     }
 
@@ -306,29 +322,15 @@ public class MainViewModel : ViewModelBase
     // Zoom
     // ──────────────────────────────────────────────────────────────────────────
 
-    private async Task RerenderAllPagesAsync(double oldDpi, double newDpi)
+    private async Task RerenderAllPagesAsync(double newDpi)
     {
         if (Pages.Count == 0) return;
 
-        // Erst alle Annotationen skalieren, dann erst rendern.
-        //
-        // Frueher lag beides in derselben Schleife. Ein Abbruch mittendrin
-        // haette die Annotationen der ersten Seiten skaliert und die der
-        // uebrigen nicht -- das waeren keine falschen Pixel mehr, sondern
-        // verschobene Daten. Die Skalierung ist reine Rechnung ohne
-        // Dateizugriff und laeuft deshalb vollstaendig durch, bevor irgendein
-        // Auftrag abbestellt werden kann.
-        double scale = newDpi / oldDpi;
-        foreach (var page in Pages)
-        {
-            // Scale annotation positions so they stay at the same relative spot on the page
-            foreach (var ann in page.Annotations)
-            {
-                ann.X *= scale;
-                ann.Y *= scale;
-            }
-        }
-
+        // Die Annotationen liegen in PDF-Punkten und bleiben beim Zoom, wie
+        // sie sind. Mit dem neuen Bild meldet die Seite einen neuen
+        // DisplayScale, und die Anzeige rechnet selbst nach. Frueher wurden
+        // hier X und Y mitskaliert, die Schriftgroesse aber nicht -- daher
+        // hing die gespeicherte Groesse vom Zoom ab (#19).
         var token = StartRenderBatch();
         try
         {
@@ -336,8 +338,6 @@ public class MainViewModel : ViewModelBase
             {
                 var image = await _renderService.RenderPageAsync(i, newDpi, token);
                 Pages[i].RenderedImage = image;
-                Pages[i].WidthInPoints = image.PixelSize.Width;
-                Pages[i].HeightInPoints = image.PixelSize.Height;
             }
         }
         catch (OperationCanceledException)

@@ -9,6 +9,7 @@ public class PdfRenderService
 {
     private string? _filePath;
     private int _pageCount;
+    private (double Width, double Height)[] _pageSizes = [];
 
     // Ein Platz, weil pdfium hier ohnehin nicht parallelisiert wird: es geht um
     // Sicherheit, nicht um Durchsatz. Statisch, also prozessweit -- das ist
@@ -33,6 +34,14 @@ public class PdfRenderService
             try
             {
                 _pageCount = Pdfium.FPDF_GetPageCount(document);
+                var sizes = new (double Width, double Height)[_pageCount];
+                for (int i = 0; i < _pageCount; i++)
+                {
+                    if (Pdfium.FPDF_GetPageSizeByIndex(document, i, out double w, out double h) == 0)
+                        throw new PdfiumException($"Seite {i + 1} lässt sich nicht laden.");
+                    sizes[i] = (w, h);
+                }
+                _pageSizes = sizes;
             }
             finally
             {
@@ -43,6 +52,16 @@ public class PdfRenderService
         {
             RenderLock.Release();
         }
+    }
+
+    /// <summary>
+    /// Groesse einer Seite in PDF-Punkten, so wie sie angezeigt wird: bei
+    /// /Rotate 90 und 270 sind Breite und Hoehe also schon vertauscht.
+    /// </summary>
+    public (double Width, double Height) GetPageSize(int pageIndex)
+    {
+        if (_filePath is null) throw new InvalidOperationException("No PDF loaded.");
+        return _pageSizes[pageIndex];
     }
 
     /// <summary>
@@ -203,5 +222,6 @@ public class PdfRenderService
     {
         _filePath = null;
         _pageCount = 0;
+        _pageSizes = [];
     }
 }
