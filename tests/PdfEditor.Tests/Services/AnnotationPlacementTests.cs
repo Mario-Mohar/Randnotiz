@@ -98,4 +98,40 @@ public class AnnotationPlacementTests
             Delete(input);
         }
     }
+
+    [Theory]
+    [InlineData(595, 842, 0)]
+    [InlineData(595, 842, 90)]
+    [InlineData(595, 842, 180)]
+    [InlineData(595, 842, 270)]
+    [InlineData(842, 595, 90)]
+    [InlineData(842, 595, -90)]
+    public async Task GedrehteSeite_TextStehtWoErAngezeigtWurdeUndWaagrecht(
+        double mediaWidth, double mediaHeight, int rotate)
+    {
+        // Wie qpdf --rotate=+90: nur /Rotate gesetzt. Angezeigt wird dann
+        // gedreht, und die Annotation liegt in diesem angezeigten Rahmen.
+        var input = CreateBlankPdf((mediaWidth, mediaHeight, rotate));
+        var output = Path.Combine(Path.GetDirectoryName(input)!, "aus.pdf");
+        try
+        {
+            bool quer = Math.Abs(rotate) % 180 == 90;
+            double width = quer ? mediaHeight : mediaWidth, height = quer ? mediaWidth : mediaHeight;
+            var annotation = new TextAnnotation(50, 60, 0) { Text = "HHHH", FontSize = 20 };
+            new PdfSaveService().Save(input, output, OnePage(width, height, annotation));
+
+            var ink = await InkBounds(output);
+            Assert.NotNull(ink);
+            var (left, top, right, bottom) = ink.Value;
+            Assert.InRange(left, 50, 56);
+            Assert.InRange(top, 60, 70);
+            // Waagrecht: breiter als hoch, und so hoch wie die Versalhoehe.
+            Assert.True(right - left > 2 * (bottom - top), $"Text steht quer: {ink}");
+            Assert.InRange(bottom - top, 20 * 0.65, 20 * 0.8);
+        }
+        finally
+        {
+            Delete(input);
+        }
+    }
 }
