@@ -14,6 +14,12 @@ updates:
     groups:
       deps:
         patterns: ["*"]
+    # PDFsharp steht ab 6.5 unter AGPL-3.0 statt MIT und verlangt eine geladene
+    # Lizenz, sonst wirft es PdfSharpLicenseException (9 Tests scheiterten in #25).
+    # Wir bleiben bewusst bei der MIT-Reihe 6.2.x; Patches darin kommen weiter.
+    ignore:
+      - dependency-name: "PDFsharp"
+        versions: [">= 6.5.0"]
 
   - package-ecosystem: github-actions
     directory: /
